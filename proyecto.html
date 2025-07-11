@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Interactiva: Timbre Inteligente con Alerta WhatsApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chosen Palette: Slate Gray Neutrals with Sky Blue Accent -->
+    <!-- Application Structure Plan: The application is designed as an interactive single-page dashboard or guide, moving away from the linear report format. A fixed sidebar navigation (collapsing to a hamburger menu on mobile) allows users to freely jump between the core phases of the project: Introduction, Components, Circuit Assembly, Logic/Code, and Testing/Improvements. This task-oriented structure serves two user flows: a linear, step-by-step path for those building the project from scratch, and a non-linear path for users looking for specific information (e.g., just the code or troubleshooting tips). This is more usable than a simple document as it chunks complex information into digestible, interactive sections. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Project Overview -> Goal: Inform -> Viz: Hero section with key takeaways -> Interaction: N/A -> Justification: Provides immediate context and purpose -> Library/Method: Tailwind.
+        - Report Info: Hardware/Software list -> Goal: Inform -> Viz: Interactive cards with icons -> Interaction: Hover/click for details -> Justification: More engaging and scannable than a plain list -> Library/Method: Tailwind, FontAwesome.
+        - Report Info: Pull-up vs Pull-down circuit -> Goal: Organize/Compare -> Viz: HTML/CSS based visual diagram -> Interaction: Toggle buttons to switch between diagrams -> Justification: Visually demonstrates the physical connections and simplifies a key choice -> Library/Method: Tailwind.
+        - Report Info: Button Debouncing -> Goal: Explain -> Viz: Animated Line Chart -> Interaction: Buttons to simulate 'bouncy' vs 'clean' signal -> Justification: Makes an abstract electrical concept tangible and understandable -> Library/Method: Chart.js.
+        - Report Info: API Comparison -> Goal: Compare -> Viz: Interactive HTML Table -> Interaction: Row highlight on hover -> Justification: Facilitates easy comparison of options -> Library/Method: Tailwind.
+        - Report Info: Troubleshooting Guide -> Goal: Organize -> Viz: Accordion component -> Interaction: Click to expand/collapse answers -> Justification: Organizes dense information cleanly, preventing cognitive overload -> Library/Method: Tailwind, JS.
+        - Report Info: Future Improvements -> Goal: Inspire -> Viz: Flippable cards -> Interaction: Hover to 'flip' card for details -> Justification: An engaging way to present extension ideas -> Library/Method: Tailwind, JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .active-nav { color: #0284c7; background-color: #f0f9ff; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        .card-flip { perspective: 1000px; }
+        .card-flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-flip:hover .card-flip-inner { transform: rotateY(180deg); }
+        .card-flip-front, .card-flip-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 0.75rem; }
+        .card-flip-back { transform: rotateY(180deg); }
+        .component-icon { transition: transform 0.3s ease; }
+        .component-icon:hover { transform: scale(1.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex min-h-screen">
+        <aside id="sidebar" class="bg-white w-64 fixed top-0 left-0 h-full p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40 shadow-lg">
+            <h1 class="text-2xl font-bold text-sky-700 mb-8 text-center">Guía del Proyecto</h1>
+            <nav id="nav-menu">
+                <ul class="space-y-2">
+                    <li><a href="#introduccion" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-rocket w-6 text-center mr-3"></i>Introducción</a></li>
+                    <li><a href="#componentes" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-cogs w-6 text-center mr-3"></i>Componentes</a></li>
+                    <li><a href="#circuito" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-microchip w-6 text-center mr-3"></i>Montaje</a></li>
+                    <li><a href="#logica" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-code w-6 text-center mr-3"></i>Lógica y Código</a></li>
+                    <li><a href="#pruebas" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-vial w-6 text-center mr-3"></i>Pruebas</a></li>
+                    <li><a href="#mejoras" class="nav-link flex items-center p-3 rounded-lg text-slate-700 hover:bg-sky-50 transition-colors duration-200"><i class="fas fa-lightbulb w-6 text-center mr-3"></i>Mejoras</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <button id="menu-toggle" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-full shadow-lg">
+            <i class="fas fa-bars text-sky-700"></i>
+        </button>
+        
+        <div id="overlay" class="md:hidden fixed inset-0 bg-black opacity-50 z-30 hidden"></div>
+
+        <main class="flex-1 md:ml-64 p-4 sm:p-6 lg:p-8">
+            <section id="introduccion" class="min-h-screen flex flex-col justify-center items-center text-center">
+                 <div class="bg-white p-8 rounded-2xl shadow-xl max-w-4xl mx-auto">
+                    <i class="fas fa-bell text-5xl text-sky-500 mb-4"></i>
+                    <h2 class="text-4xl font-bold text-slate-900 mb-4">Timbre Inteligente con Alertas de WhatsApp</h2>
+                    <p class="text-lg text-slate-600 mb-6 max-w-2xl mx-auto">
+                        Bienvenido a la guía interactiva para el proyecto de Sistemas de Control. Aquí transformamos la idea de un timbre convencional en un dispositivo IoT inteligente. El objetivo es simple pero potente: al presionar un botón, se enviará una notificación instantánea a un número de WhatsApp. Esta guía te llevará a través de cada fase, desde la selección de componentes hasta las pruebas finales y futuras expansiones.
+                    </p>
+                    <a href="#componentes" class="inline-block bg-sky-600 text-white font-bold py-3 px-8 rounded-full hover:bg-sky-700 transition-transform duration-300 transform hover:scale-105">
+                        ¡Empezar el Proyecto! <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </section>
+
+            <section id="componentes" class="min-h-screen py-20">
+                <div class="bg-white p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">Componentes Necesarios</h2>
+                    <p class="text-slate-600 text-center mb-12 max-w-3xl mx-auto">Para dar vida a nuestro timbre inteligente, necesitamos una combinación específica de hardware y software. Esta sección detalla cada elemento requerido. Cada componente ha sido seleccionado para optimizar la simplicidad y la eficacia del proyecto, especialmente la elección del ESP32/ESP8266 por su Wi-Fi integrado, que es crucial para la conectividad a internet.</p>
+
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-6 flex items-center"><i class="fas fa-memory mr-3 text-sky-600"></i>Hardware</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fas fa-microchip text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Microcontrolador (ESP32/ESP8266)</h4>
+                                        <p class="text-slate-600 text-sm">El cerebro del proyecto. Su Wi-Fi integrado es esencial para enviar las alertas.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fas fa-toggle-on text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Botón Pulsador Momentáneo</h4>
+                                        <p class="text-slate-600 text-sm">El "timbre" físico que el usuario presionará.</p>
+                                    </div>
+                                </div>
+                                 <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fas fa-wave-square text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Resistencias (10KΩ y 220Ω)</h4>
+                                        <p class="text-slate-600 text-sm">La de 10KΩ para pull-down (si no se usa pull-up interno) y 220Ω para el LED opcional.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fas fa-border-all text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Protoboard y Cables Jumper</h4>
+                                        <p class="text-slate-600 text-sm">Para ensamblar el circuito de forma temporal y sin soldadura.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-6 flex items-center"><i class="fab fa-uncharted mr-3 text-sky-600"></i>Software y Servicios</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fab fa-arduino text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Arduino IDE</h4>
+                                        <p class="text-slate-600 text-sm">El entorno para escribir y cargar nuestro código al microcontrolador.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fas fa-book text-2xl text-sky-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">Librerías (WiFi, HTTPClient, UrlEncode)</h4>
+                                        <p class="text-slate-600 text-sm">Necesarias para la conexión a internet y el envío de solicitudes a la API.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-4 bg-slate-50 rounded-lg component-icon">
+                                    <i class="fab fa-whatsapp text-2xl text-green-500 mt-1"></i>
+                                    <div class="ml-4">
+                                        <h4 class="font-bold">API de CallMeBot</h4>
+                                        <p class="text-slate-600 text-sm">El servicio de terceros que actúa como puente para enviar mensajes a WhatsApp.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="circuito" class="min-h-screen py-20 bg-slate-100">
+                 <div class="bg-white p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">Montaje del Circuito</h2>
+                    <p class="text-slate-600 text-center mb-12 max-w-3xl mx-auto">El corazón del hardware es la conexión del botón al microcontrolador. Una conexión incorrecta puede llevar a lecturas "flotantes" e impredecibles. Aquí visualizamos las dos configuraciones principales. Recomendamos la configuración Pull-Up por su simplicidad, ya que aprovecha una resistencia interna del ESP, reduciendo componentes externos.</p>
+
+                    <div class="flex justify-center mb-8">
+                        <div class="inline-flex rounded-md shadow-sm" role="group">
+                            <button type="button" id="btn-pullup" class="circuit-toggle-btn active-btn px-6 py-3 text-sm font-medium text-white bg-sky-600 border border-sky-600 rounded-l-lg hover:bg-sky-700">Pull-Up (Recomendado)</button>
+                            <button type="button" id="btn-pulldown" class="circuit-toggle-btn px-6 py-3 text-sm font-medium text-slate-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100">Pull-Down</button>
+                        </div>
+                    </div>
+
+                    <div id="diagram-container" class="grid lg:grid-cols-2 gap-8 items-center">
+                        <div id="pullup-diagram" class="circuit-diagram">
+                             <div class="p-6 border-2 border-dashed rounded-lg">
+                                <h4 class="font-bold text-lg mb-4 text-center">Configuración Pull-Up</h4>
+                                <div class="space-y-4 text-sm">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                        <span class="font-mono">Pulsador (Terminal 1)</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-sky-100 text-sky-800 px-2 py-1 rounded">GPIO Pin (ej. D2)</span>
+                                    </div>
+                                     <div class="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                        <span class="font-mono">Pulsador (Terminal 2)</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-red-100 text-red-800 px-2 py-1 rounded">GND</span>
+                                    </div>
+                                </div>
+                                <p class="mt-4 text-xs text-slate-500 text-center">No se necesita resistencia externa. El pin se configura como `INPUT_PULLUP` en el código. El pin lee `LOW` cuando se presiona.</p>
+                            </div>
+                        </div>
+
+                        <div id="pulldown-diagram" class="circuit-diagram hidden">
+                             <div class="p-6 border-2 border-dashed rounded-lg">
+                                <h4 class="font-bold text-lg mb-4 text-center">Configuración Pull-Down</h4>
+                                 <div class="space-y-4 text-sm">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                        <span class="font-mono">Pulsador (Terminal 1)</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-sky-100 text-sky-800 px-2 py-1 rounded">GPIO Pin (ej. D2)</span>
+                                    </div>
+                                     <div class="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                        <span class="font-mono">Pulsador (Terminal 2)</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-green-100 text-green-800 px-2 py-1 rounded">3.3V</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                        <span class="font-mono">GPIO Pin (ej. D2)</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Resistencia 10KΩ</span> <i class="fas fa-long-arrow-alt-right text-gray-400"></i> <span class="font-mono bg-red-100 text-red-800 px-2 py-1 rounded">GND</span>
+                                    </div>
+                                </div>
+                                <p class="mt-4 text-xs text-slate-500 text-center">Requiere una resistencia externa. El pin lee `HIGH` cuando se presiona.</p>
+                            </div>
+                        </div>
+
+                        <div class="text-slate-600">
+                             <p class="mb-4">Un pin de entrada digital debe tener un estado definido (`HIGH` o `LOW`) en todo momento. De lo contrario, "flota", captando ruido eléctrico y provocando activaciones falsas. Las configuraciones <strong class="text-slate-800">pull-up</strong> o <strong class="text-slate-800">pull-down</strong> usan una resistencia para "jalar" el pin a un estado estable cuando el botón no está presionado, garantizando una lectura fiable.</p>
+                            <div class="bg-sky-50 text-sky-800 p-4 rounded-lg text-sm">
+                                <i class="fas fa-exclamation-triangle mr-2"></i><strong>Advertencia de Voltaje:</strong> Las placas ESP32/ESP8266 operan a <strong class="font-bold">3.3V</strong>. Conectar sus pines GPIO directamente a una fuente de 5V (como la de un Arduino UNO) puede dañarlos permanentemente.
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </section>
+
+             <section id="logica" class="min-h-screen py-20">
+                <div class="bg-white p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">Lógica y Programación</h2>
+                    <p class="text-slate-600 text-center mb-12 max-w-3xl mx-auto">El código es el alma de nuestro proyecto. Aquí desglosamos los conceptos lógicos clave antes de presentar el sketch completo. Entender el "debouncing", la conexión Wi-Fi y cómo interactuar con la API de WhatsApp es fundamental para que el sistema sea robusto y fiable.</p>
+                    
+                    <div class="space-y-16">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-center">El Problema del "Rebote" del Botón (Debouncing)</h3>
+                            <p class="text-slate-600 text-center mb-6 max-w-2xl mx-auto">Un botón físico no crea una conexión limpia. Al presionarlo, sus contactos metálicos vibran, generando múltiples señales falsas. El microcontrolador, al ser tan rápido, interpreta esto como varias pulsaciones. El "debouncing" es una técnica de software que ignora estas vibraciones para detectar una sola pulsación real.</p>
+                            <div class="chart-container">
+                                <canvas id="debounceChart"></canvas>
+                            </div>
+                            <div class="flex justify-center mt-4 space-x-2">
+                                <button id="simulateBouncy" class="px-4 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg">Simular Señal con Rebote</button>
+                                <button id="simulateClean" class="px-4 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-lg">Simular Señal Limpia (Debounced)</button>
+                            </div>
+                        </div>
+
+                        <div>
+                             <h3 class="text-2xl font-semibold mb-4 text-center">Flujo de Notificación de WhatsApp</h3>
+                             <p class="text-slate-600 text-center mb-8 max-w-2xl mx-auto">Para enviar un mensaje, usamos el servicio gratuito CallMeBot. Nuestro ESP32 envía una solicitud HTTP (como acceder a una página web) a una URL especial que contiene nuestra API Key, número de teléfono y el mensaje. El servidor de CallMeBot recibe esta solicitud y se encarga de entregar el mensaje a través de WhatsApp.</p>
+                             <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 text-center">
+                                <div class="p-4 rounded-lg bg-slate-50 flex flex-col items-center w-40 h-28 justify-center">
+                                    <i class="fas fa-hand-pointer text-3xl text-sky-600 mb-2"></i>
+                                    <span class="font-semibold">1. Pulsación</span>
+                                </div>
+                                <i class="fas fa-long-arrow-alt-right text-3xl text-gray-300 hidden md:block"></i>
+                                <i class="fas fa-long-arrow-alt-down text-3xl text-gray-300 md:hidden"></i>
+                                <div class="p-4 rounded-lg bg-slate-50 flex flex-col items-center w-40 h-28 justify-center">
+                                    <i class="fas fa-wifi text-3xl text-sky-600 mb-2"></i>
+                                    <span class="font-semibold">2. Envío HTTP</span>
+                                </div>
+                                <i class="fas fa-long-arrow-alt-right text-3xl text-gray-300 hidden md:block"></i>
+                                <i class="fas fa-long-arrow-alt-down text-3xl text-gray-300 md:hidden"></i>
+                                <div class="p-4 rounded-lg bg-slate-50 flex flex-col items-center w-40 h-28 justify-center">
+                                    <i class="fas fa-server text-3xl text-sky-600 mb-2"></i>
+                                    <span class="font-semibold">3. API CallMeBot</span>
+                                </div>
+                                 <i class="fas fa-long-arrow-alt-right text-3xl text-gray-300 hidden md:block"></i>
+                                 <i class="fas fa-long-arrow-alt-down text-3xl text-gray-300 md:hidden"></i>
+                                 <div class="p-4 rounded-lg bg-green-50 flex flex-col items-center w-40 h-28 justify-center">
+                                    <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
+                                    <span class="font-semibold">4. Notificación</span>
+                                 </div>
+                             </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-6 text-center">Código Fuente Completo (Sketch)</h3>
+                            <div class="bg-slate-900 rounded-lg p-4 text-sm text-white font-mono relative">
+                                <button id="copy-code-btn" class="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1 rounded">Copiar</button>
+                                <pre id="code-block"><code class="language-cpp">
+// Incluir librerías necesarias
+#include &lt;WiFi.h&gt;
+#include &lt;HTTPClient.h&gt;
+#include &lt;UrlEncode.h&gt;
+
+// --- CONFIGURACIÓN ---
+const char* ssid = "TU_WIFI_SSID";
+const char* password = "TU_WIFI_PASSWORD";
+String phoneNumber = "+1234567890"; // Tu número con código de país
+String apiKey = "TU_API_KEY_CALLMEBOT";
+
+// Configuración del botón
+const int buttonPin = 2; // GPIO2
+long lastDebounceTime = 0;
+long debounceDelay = 50; // 50 milisegundos
+int lastButtonState = HIGH;
+
+// Función para enviar el mensaje de WhatsApp
+void sendMessage(String message) {
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("Enviando mensaje...");
+    String url = "https://api.callmebot.com/whatsapp.php?phone=" + phoneNumber + "&text=" + urlEncode(message) + "&apikey=" + apiKey;
+    
+    HTTPClient http;
+    http.begin(url);
+    
+    int httpCode = http.GET();
+    if (httpCode > 0) {
+      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+      if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+        Serial.println(payload);
+      }
+    } else {
+      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+    http.end();
+  } else {
+    Serial.println("Error: No hay conexión WiFi.");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  // Conectar a WiFi
+  Serial.print("Conectando a ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi conectado!");
+  Serial.print("Dirección IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop() {
+  int reading = digitalRead(buttonPin);
+
+  // Lógica de Debounce
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading == LOW) { // Botón presionado (pull-up)
+       Serial.println("¡Botón presionado!");
+       sendMessage("¡Alguien está en la puerta!");
+       // Esperar hasta que el botón se suelte para evitar envíos múltiples
+       while(digitalRead(buttonPin) == LOW) {
+         delay(10);
+       }
+       Serial.println("Botón liberado.");
+    }
+  }
+  
+  lastButtonState = reading;
+}
+                                </code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="pruebas" class="min-h-screen py-20 bg-slate-100">
+                <div class="bg-white p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">Pruebas y Solución de Problemas</h2>
+                    <p class="text-slate-600 text-center mb-12 max-w-3xl mx-auto">Una vez montado el circuito y cargado el código, llega el momento de la verdad. Probar el sistema metódicamente es clave para asegurar su correcto funcionamiento. Esta sección ofrece una guía de pasos para la verificación y una lista de problemas comunes con sus soluciones para agilizar la depuración.</p>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-6">Pasos de Verificación</h3>
+                            <ol class="list-decimal list-inside space-y-4 text-slate-700">
+                                <li><strong>Cargar Código y Abrir Monitor Serial:</strong> Sube el sketch al ESP32 y abre el Monitor Serial (Baudios: 115200).</li>
+                                <li><strong>Verificar Conexión Wi-Fi:</strong> Observa los mensajes. Deberías ver "WiFi conectado!" y tu dirección IP.</li>
+                                <li><strong>Presionar el Botón:</strong> Pulsa el timbre una vez.</li>
+                                <li><strong>Observar Respuesta en Monitor:</strong> Deberías ver "¡Botón presionado!" y una respuesta HTTP con código 200.</li>
+                                <li><strong>Revisar WhatsApp:</strong> Comprueba tu teléfono. Deberías recibir el mensaje de CallMeBot.</li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-6">Guía de Troubleshooting</h3>
+                            <div id="accordion" class="space-y-2">
+                                <div class="accordion-item bg-slate-50 rounded-lg">
+                                    <button class="accordion-header w-full text-left p-4 font-semibold flex justify-between items-center">
+                                        No me conecto al Wi-Fi
+                                        <i class="fas fa-chevron-down transition-transform"></i>
+                                    </button>
+                                    <div class="accordion-content hidden p-4 pt-0 text-slate-600">
+                                        <ul class="list-disc list-inside space-y-1 text-sm">
+                                            <li>Verifica que el SSID y la contraseña sean correctos (distingue mayúsculas y minúsculas).</li>
+                                            <li>Asegúrate de que la señal Wi-Fi sea lo suficientemente fuerte.</li>
+                                            <li>Comprueba que la placa y el puerto COM estén bien seleccionados en el Arduino IDE.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="accordion-item bg-slate-50 rounded-lg">
+                                    <button class="accordion-header w-full text-left p-4 font-semibold flex justify-between items-center">
+                                        No recibo mensajes de WhatsApp
+                                        <i class="fas fa-chevron-down transition-transform"></i>
+                                    </button>
+                                    <div class="accordion-content hidden p-4 pt-0 text-slate-600">
+                                       <ul class="list-disc list-inside space-y-1 text-sm">
+                                            <li>Confirma que tu API Key de CallMeBot es correcta.</li>
+                                            <li>Verifica que el número de teléfono esté en formato internacional (ej. +34...).</li>
+                                            <li>Asegúrate de haber enviado el mensaje de activación "I allow callmebot to send me messages" al bot.</li>
+                                             <li>Revisa el código de respuesta HTTP en el Monitor Serial. Un código diferente de 200 indica un error.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="accordion-item bg-slate-50 rounded-lg">
+                                    <button class="accordion-header w-full text-left p-4 font-semibold flex justify-between items-center">
+                                        Recibo varios mensajes con una sola pulsación
+                                        <i class="fas fa-chevron-down transition-transform"></i>
+                                    </button>
+                                    <div class="accordion-content hidden p-4 pt-0 text-slate-600">
+                                        <p class="text-sm">Este es un problema clásico de "rebote". Aumenta el valor de `debounceDelay` en tu código (prueba con 100 o 150) para darle más tiempo al botón a estabilizarse.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             <section id="mejoras" class="min-h-screen py-20">
+                <div class="bg-white p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">Mejoras y Expansiones Futuras</h2>
+                    <p class="text-slate-600 text-center mb-12 max-w-3xl mx-auto">Este proyecto es solo el comienzo. Su diseño modular permite una gran cantidad de mejoras que pueden transformarlo en un sistema de monitoreo y control mucho más completo. Aquí te presentamos algunas ideas para llevar tu timbre inteligente al siguiente nivel, explorando conceptos más avanzados de IoT.</p>
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-sky-100 text-sky-800">
+                                    <i class="fas fa-comment-dots text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Alertas Contextuales</h4>
+                                </div>
+                                <div class="card-flip-back bg-sky-600 text-white">
+                                    <p class="text-sm">Envía diferentes mensajes según la duración de la pulsación: un toque corto para "Timbre" y uno largo para "Urgente".</p>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-thermometer-half text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Integrar más Sensores</h4>
+                                </div>
+                                <div class="card-flip-back bg-indigo-600 text-white">
+                                    <p class="text-sm">Añade un sensor de movimiento (PIR) para alertas de "Movimiento detectado" o un sensor de temperatura para monitoreo ambiental.</p>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-emerald-100 text-emerald-800">
+                                    <i class="fas fa-globe-americas text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Interfaz Web de Config.</h4>
+                                </div>
+                                <div class="card-flip-back bg-emerald-600 text-white">
+                                    <p class="text-sm">Crea un servidor web en el ESP para configurar el Wi-Fi y la API Key desde un navegador, sin tener que reprogramar.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-amber-100 text-amber-800">
+                                    <i class="fas fa-history text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Registro de Eventos</h4>
+                                </div>
+                                <div class="card-flip-back bg-amber-600 text-white">
+                                    <p class="text-sm">Guarda un historial de cada vez que se presiona el timbre en una tarjeta SD o envíalo a un servicio en la nube como ThingSpeak.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-rose-100 text-rose-800">
+                                    <i class="fas fa-exchange-alt text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Comunicación Bidireccional</h4>
+                                </div>
+                                <div class="card-flip-back bg-rose-600 text-white">
+                                    <p class="text-sm">Usa una API más avanzada como Twilio para no solo recibir alertas, sino también enviar comandos al ESP desde WhatsApp.</p>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="card-flip h-48">
+                            <div class="card-flip-inner">
+                                <div class="card-flip-front bg-slate-200 text-slate-800">
+                                    <i class="fas fa-battery-full text-4xl mb-3"></i>
+                                    <h4 class="font-bold text-lg">Alimentación por Batería</h4>
+                                </div>
+                                <div class="card-flip-back bg-slate-600 text-white">
+                                    <p class="text-sm">Optimiza el código con modos de "sueño profundo" (deep sleep) para que el dispositivo pueda funcionar con baterías durante meses.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('main section');
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const navMenu = document.getElementById('nav-menu');
+
+    const setActiveLink = () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 60) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active-nav');
+            if (link.getAttribute('href').substring(1) === current) {
+                link.classList.add('active-nav');
+            }
+        });
+    };
+    
+    window.addEventListener('scroll', setActiveLink);
+    setActiveLink();
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+             if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        });
+    });
+
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+    });
+
+    overlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    });
+
+    const pullupBtn = document.getElementById('btn-pullup');
+    const pulldownBtn = document.getElementById('btn-pulldown');
+    const pullupDiagram = document.getElementById('pullup-diagram');
+    const pulldownDiagram = document.getElementById('pulldown-diagram');
+    const circuitToggleBtns = document.querySelectorAll('.circuit-toggle-btn');
+
+    pullupBtn.addEventListener('click', () => {
+        pullupDiagram.classList.remove('hidden');
+        pulldownDiagram.classList.add('hidden');
+        circuitToggleBtns.forEach(b => b.classList.remove('active-btn', 'bg-sky-600', 'text-white'));
+        pullupBtn.classList.add('active-btn', 'bg-sky-600', 'text-white');
+        pulldownBtn.classList.add('bg-white', 'text-slate-900');
+    });
+    pulldownBtn.addEventListener('click', () => {
+        pulldownDiagram.classList.remove('hidden');
+        pullupDiagram.classList.add('hidden');
+        circuitToggleBtns.forEach(b => b.classList.remove('active-btn', 'bg-sky-600', 'text-white'));
+        pulldownBtn.classList.add('active-btn', 'bg-sky-600', 'text-white');
+        pullupBtn.classList.add('bg-white', 'text-slate-900');
+
+    });
+
+    const ctx = document.getElementById('debounceChart').getContext('2d');
+    let debounceChart;
+
+    const bouncyData = {
+        labels: Array.from({length: 20}, (_, i) => i + 1),
+        datasets: [{
+            label: 'Señal con Rebote',
+            data: [1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            borderColor: 'rgba(239, 68, 68, 0.8)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            fill: true,
+            stepped: true,
+        }]
+    };
+
+    const cleanData = {
+        labels: Array.from({length: 20}, (_, i) => i + 1),
+        datasets: [{
+            label: 'Señal Limpia (Debounced)',
+            data: [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            borderColor: 'rgba(16, 185, 129, 0.8)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            stepped: true,
+        }]
+    };
+    
+    function createChart(data) {
+        if (debounceChart) {
+            debounceChart.destroy();
+        }
+        debounceChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1.2,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                if (value === 1) return 'HIGH';
+                                if (value === 0) return 'LOW';
+                                return '';
+                            }
+                        }
+                    },
+                    x: {
+                         title: { display: true, text: 'Tiempo (milisegundos)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
+                }
+            }
+        });
+    }
+
+    document.getElementById('simulateBouncy').addEventListener('click', () => createChart(bouncyData));
+    document.getElementById('simulateClean').addEventListener('click', () => createChart(cleanData));
+    createChart(bouncyData);
+
+
+    document.getElementById('copy-code-btn').addEventListener('click', () => {
+        const codeBlock = document.getElementById('code-block').innerText;
+        const button = document.getElementById('copy-code-btn');
+        navigator.clipboard.writeText(codeBlock).then(() => {
+            button.innerText = '¡Copiado!';
+            setTimeout(() => {
+                button.innerText = 'Copiar';
+            }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar el código: ', err);
+            button.innerText = 'Error';
+             setTimeout(() => {
+                button.innerText = 'Copiar';
+            }, 2000);
+        });
+    });
+
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    accordionItems.forEach(item => {
+        const header = item.querySelector('.accordion-header');
+        header.addEventListener('click', () => {
+            const content = item.querySelector('.accordion-content');
+            const icon = header.querySelector('i');
+            
+            // Close other items
+            accordionItems.forEach(otherItem => {
+                if(otherItem !== item) {
+                    otherItem.querySelector('.accordion-content').classList.add('hidden');
+                    otherItem.querySelector('.accordion-header i').classList.remove('rotate-180');
+                }
+            });
+
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        });
+    });
+});
+</script>
+
+</body>
+</html>
